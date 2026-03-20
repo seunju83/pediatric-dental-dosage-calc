@@ -88,6 +88,8 @@
         .reset-btn{width:100%;padding:9px;background:white;color:var(--gray-500);border:1.5px solid var(--gray-200);
             border-radius:9px;font-size:0.82rem;font-weight:600;cursor:pointer;margin-top:6px;}
         .right-panel{min-height:180px;}
+        .right-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+        @media(min-width:1100px){.right-grid{grid-template-columns:1fr 280px;}}
         .result-placeholder{text-align:center;padding:40px 16px;color:var(--gray-300);font-size:0.85rem;}
         .result-box{display:none;} .result-box.show{display:block;}
         .result-header{background:linear-gradient(135deg,#16a34a,#059669);color:white;padding:12px 14px;
@@ -207,10 +209,20 @@
         <button class="reset-btn" onclick="resetAll()">초기화</button>
     </div>
     <div class="right-panel">
-        <div class="card" id="phCard"><div class="result-placeholder">환자 정보 입력 후 약물 선택 → <strong>[처방 용량 계산]</strong></div></div>
-        <div class="card result-box" id="resBox">
-            <div class="result-header"><h3 id="resTitle">결과</h3><div class="result-sub" id="resSub"></div></div>
-            <div id="resContent"></div>
+        <div class="right-grid">
+            <div>
+                <div class="card" id="phCard"><div class="result-placeholder">환자 정보 입력 후 약물 선택 → <strong>[처방 용량 계산]</strong></div></div>
+                <div class="card result-box" id="resBox">
+                    <div class="result-header"><h3 id="resTitle">결과</h3><div class="result-sub" id="resSub"></div></div>
+                    <div id="resContent"></div>
+                </div>
+            </div>
+            <div class="card result-box" id="rxBox" style="position:sticky;top:16px;align-self:start;">
+                <div style="background:var(--primary);color:white;padding:10px 14px;border-radius:var(--radius) var(--radius) 0 0;margin:-16px -16px 12px -16px;">
+                    <h3 style="font-size:0.88rem;">&#x1F4CB; 통합 처방전</h3>
+                </div>
+                <div id="rxContent"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -379,7 +391,7 @@ const FORM_LABELS = {syrup:'시럽제',tablet:'정제·캡슐'};
 
 let curForm='syrup', curCat='antibiotics';
 let selDrugs=new Set(); // 다중 선택
-let pHTML='', pDrug=null, pAge=0, pWt=0;
+let pHTML='', pRxHTML='', pDrug=null, pAge=0, pWt=0;
 let hospDrugs = JSON.parse(localStorage.getItem('hospDrugs')||'null');
 
 function setP(y,w){document.getElementById('ageYear').value=y;document.getElementById('weight').value=w;}
@@ -480,44 +492,50 @@ function calculate(){
         if(drugIds.indexOf(id)<drugIds.length-1)allHTML+='<hr style="border:none;border-top:2px dashed var(--gray-200);margin:14px 0;">';
     }
 
-    // 통합 처방전
-    allHTML+=buildCombinedRx(drugIds,age,wt);
-
     pHTML=allHTML;
+    // 통합 처방전은 별도 패널
+    pRxHTML=buildCombinedRx(drugIds,age,wt);
     if(allAlerts.length)showWarn(allAlerts);
     else showMultiRes();
 }
 
 function showMultiRes(){
-    document.getElementById('resTitle').textContent=`통합 처방 결과 (${selDrugs.size}건)`;
+    document.getElementById('resTitle').textContent=`처방 결과 (${selDrugs.size}건)`;
     document.getElementById('resSub').textContent=`${pAge}세 / ${pWt}kg`;
     document.getElementById('resContent').innerHTML=pHTML;
     document.getElementById('phCard').style.display='none';
     document.getElementById('resBox').classList.add('show');
+    document.getElementById('rxContent').innerHTML=pRxHTML;
+    document.getElementById('rxBox').classList.add('show');
 }
 
 function buildCombinedRx(ids,age,wt){
-    let h='<div class="result-prescription" style="margin-top:12px;border:2px solid var(--primary)"><div class="rx-title" style="font-size:0.88rem">&#x1F4CB; 통합 처방전 (Rp.)</div>';
-    h+=`<div class="rx-line" style="color:var(--gray-500);font-size:0.76rem">환자: ${age}세 / ${wt}kg</div><hr style="margin:6px 0;border:none;border-top:1px solid var(--gray-200)">`;
+    let h=`<div style="color:var(--gray-500);font-size:0.76rem;margin-bottom:8px">환자: ${age}세 / ${wt}kg</div>`;
     let num=1;
     for(const id of ids){
         const dr=findD(id);if(!dr)continue;
         const isTab=Object.values(D.tablet).some(cat=>cat.some(d=>d.id===id));
+        let rxText='';
         if(dr.isProbiotic){
             const rule=dr.rules.find(r=>age>=r.min&&age<r.max)||dr.rules[dr.rules.length-1];
-            h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — ${rule.dose} ${rule.freq}</div>`;
+            rxText=`${rule.dose} ${rule.freq}`;
         } else if(isTab){
             const b=WB.find(x=>wt>=x.mn&&wt<x.mx);
             const rx=getTabRx(dr,dr.aFr,b.f);
-            h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — ${rx.w?'시럽 변경 권장':rx.rx} / ${dr.dur}</div>`;
+            rxText=`${rx.w?'시럽 변경 권장':rx.rx} / ${dr.dur}`;
         } else {
             const c=dr.conc;
-            if(dr.pd){const ml=Math.round(dr.dL*wt/c);h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${ml}mL ${dr.frL} / ${dr.dur}</div>`;}
-            else{const ml=Math.round(dr.dL*wt/dr.fr/c);h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${ml}mL ${dr.frL} / ${dr.dur}</div>`;}
+            if(dr.pd){const ml=Math.round(dr.dL*wt/c);rxText=`1회 ${ml}mL ${dr.frL} / ${dr.dur}`;}
+            else{const ml=Math.round(dr.dL*wt/dr.fr/c);rxText=`1회 ${ml}mL ${dr.frL} / ${dr.dur}`;}
         }
+        h+=`<div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--gray-100);">
+            <div style="flex:1;font-size:0.8rem"><strong>${num}. ${dr.name}</strong><br><span style="color:var(--gray-600)">${rxText}</span></div>
+            <button onclick="removeDrug('${id}');calculate();" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:1rem;padding:2px 4px;line-height:1;" title="삭제">&times;</button>
+        </div>`;
         num++;
     }
-    h+='</div>';return h;
+    if(ids.length===0)h='<div style="color:var(--gray-300);font-size:0.78rem;text-align:center;padding:16px;">선택된 약물이 없습니다</div>';
+    return h;
 }
 
 function buildProbioticHTML(dr,age){
@@ -608,7 +626,8 @@ function showWarn(a){
 function closeModal(){document.getElementById('warnModal').classList.remove('show');}
 function closeModalShow(){closeModal();showMultiRes();}
 function resetAll(){document.getElementById('ageYear').value='';document.getElementById('weight').value='';selDrugs.clear();
-    document.getElementById('resBox').classList.remove('show');document.getElementById('phCard').style.display='';renderList();renderBadges();}
+    document.getElementById('resBox').classList.remove('show');document.getElementById('rxBox').classList.remove('show');
+    document.getElementById('phCard').style.display='';renderList();renderBadges();}
 
 // ================================================================
 // 용량표
