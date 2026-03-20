@@ -403,11 +403,16 @@ function renderList(){
 function findD(id){for(const f of Object.values(D))for(const c of Object.values(f)){const r=c.find(d=>d.id===id);if(r)return r;}return null;}
 
 function getTabRx(dr,fr,frac){
-    if(frac<=0.25)return{rx:'시럽제 권장 (정제 분할 어려움)',w:true};
+    const isCap = dr.unit==='캡슐';
+    if(frac<=0.25)return{rx:'시럽제 권장',w:true};
     if(frac<=0.5){
-        if(fr>=3)return{rx:`1${dr.unit} x 1일 2회`,w:false};
-        if(fr===2)return{rx:`1${dr.unit} x 1일 1회`,w:false};
-        return{rx:`1${dr.unit} x 1일 ${Math.max(1,Math.round(fr*frac))}회`,w:false};
+        if(isCap){
+            // 캡슐은 분할 불가
+            if(fr>=3)return{rx:`1${dr.unit} x 1일 1회 (캡슐 분할불가)`,w:false};
+            return{rx:`1${dr.unit} x 1일 1회`,w:false};
+        }
+        // 정제는 반정 분할 가능
+        return{rx:`0.5${dr.unit} x 1일 ${fr}회`,w:false};
     }
     if(frac<=0.67){
         if(fr>=3)return{rx:`1${dr.unit} x 1일 2회`,w:false};
