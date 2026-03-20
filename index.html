@@ -438,8 +438,11 @@ function renderList(){
         const sel=selDrugs.has(d.id);
         const dn=dispName(d);
         return`<div class="drug-item ${sel?'selected':''}" onclick="toggleDrug('${d.id}')">
-            <div class="drug-name">${dn}</div><div class="drug-component">${d.comp}</div>
-            ${dn!==d.name?`<div class="drug-info" style="color:var(--gray-400)">(${d.name})</div>`:''}</div>`;
+            <div style="display:flex;align-items:center;gap:7px;">
+                <input type="checkbox" ${sel?'checked':''} style="width:16px;height:16px;accent-color:var(--primary);pointer-events:none;flex-shrink:0;">
+                <div><div class="drug-name">${dn}</div><div class="drug-component">${d.comp}</div>
+                ${dn!==d.name?`<div class="drug-info" style="color:var(--gray-400)">(${d.name})</div>`:''}</div>
+            </div></div>`;
     }).join('');
 }
 
