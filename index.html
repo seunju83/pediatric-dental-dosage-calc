@@ -499,7 +499,7 @@ function calculate(){
             allHTML+=res.html;
             allAlerts.push(...res.alerts);
         }
-        if(drugIds.indexOf(id)<drugIds.length-1)allHTML+='<hr style="border:none;border-top:2px dashed var(--gray-200);margin:14px 0;">';
+        if(drugIds.indexOf(id)<drugIds.length-1)allHTML+='<div style="margin:16px 0;border-top:3px solid var(--gray-200);"></div>';
     }
 
     pHTML=allHTML;
@@ -550,7 +550,7 @@ function buildCombinedRx(ids,age,wt){
 
 function buildProbioticHTML(dr,age){
     const rule=dr.rules.find(r=>age>=r.min&&age<r.max)||dr.rules[dr.rules.length-1];
-    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
+    let h=`<div style="margin-bottom:8px;padding:8px 12px;background:var(--gray-800);color:white;border-radius:8px;font-weight:700;font-size:1rem;">${dispName(dr)}</div>`;
     h+=`<div class="result-detail"><div class="label">연령 구간: ${rule.label}</div>
         <div class="value highlight">${rule.dose} ${rule.freq}</div></div>`;
     dr.rules.forEach(r=>{
@@ -564,7 +564,7 @@ function buildProbioticHTML(dr,age){
 function buildTabletHTML(dr,age,wt){
     const b=WB.find(x=>wt>=x.mn&&wt<x.mx);
     const rx=getTabRx(dr,dr.aFr,b.f);
-    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
+    let h=`<div style="margin-bottom:8px;padding:8px 12px;background:var(--gray-800);color:white;border-radius:8px;font-weight:700;font-size:1rem;">${dispName(dr)}</div>`;
     if(rx.w){h+=`<div class="result-detail" style="border:2px solid var(--danger);background:#fef2f2"><div class="label" style="color:var(--danger)">${b.l} (${b.fl})</div><div class="value" style="color:var(--danger);font-size:1.05rem">${rx.rx}</div></div>`;}
     else{h+=`<div class="result-detail" style="border:2px solid var(--success);background:#f0fdf4"><div class="label" style="color:var(--success)">${b.l} → 성인의 ${b.fl}</div><div class="value highlight" style="font-size:1.2rem">${rx.rx}</div><div class="sub">${dr.dur}</div></div>`;}
     h+=`<div class="weight-bracket">`;
@@ -576,7 +576,7 @@ function buildTabletHTML(dr,age,wt){
 
 function buildSyrupHTML(dr,age,wt){
     let warn=[],ma=[],h='';const c=dr.conc;
-    h+=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
+    h+=`<div style="margin-bottom:8px;padding:8px 12px;background:var(--gray-800);color:white;border-radius:8px;font-weight:700;font-size:1rem;">${dispName(dr)}</div>`;
 
     if(dr.pd){
         const dL=dr.dL*wt,dH=dr.dH*wt,mL=dL/c,mH=dH/c,ddL=dL*dr.fr,ddH=dH*dr.fr;
