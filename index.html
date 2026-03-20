@@ -421,11 +421,10 @@ function renderList(){
     const drugs=D[curForm][curCat]||[];
     document.getElementById('drugList').innerHTML=drugs.map(d=>{
         if(!isOn(d.id))return`<div class="drug-item hidden"></div>`;
-        const q=d.qml?`<div class="drug-quick">간편: ${d.qmlNote}</div>`:'';
         const sel=selDrugs.has(d.id);
         return`<div class="drug-item ${sel?'selected':''}" onclick="toggleDrug('${d.id}')">
             <div class="drug-name">${sel?'&#x2611; ':'&#x2610; '}${d.name}</div><div class="drug-component">${d.comp}</div>
-            <div class="drug-info">${d.ex}</div>${q}</div>`;
+            <div class="drug-info">${d.ex}</div></div>`;
     }).join('');
 }
 
@@ -513,8 +512,8 @@ function buildCombinedRx(ids,age,wt){
             h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — ${rx.w?'시럽 변경 권장':rx.rx} / ${dr.dur}</div>`;
         } else {
             const c=dr.conc;
-            if(dr.pd){const d=dr.dL*wt;h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${(d/c).toFixed(1)}mL (${d.toFixed(0)}mg) ${dr.frL} / ${dr.dur}</div>`;}
-            else{const pd=(dr.dL*wt)/dr.fr;h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${(pd/c).toFixed(1)}mL (${pd.toFixed(0)}mg) ${dr.frL} / ${dr.dur}</div>`;}
+            if(dr.pd){const ml=Math.round(dr.dL*wt/c);h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${ml}mL ${dr.frL} / ${dr.dur}</div>`;}
+            else{const ml=Math.round(dr.dL*wt/dr.fr/c);h+=`<div class="rx-line"><strong>${num}. ${dr.name}</strong> — 1회 ${ml}mL ${dr.frL} / ${dr.dur}</div>`;}
         }
         num++;
     }
@@ -557,13 +556,20 @@ function buildSyrupHTML(dr,age,wt){
         else if(dr.mxDU30&&wt<=30&&ddH>dr.mxDU30)warn.push(`30kg이하: 최대용량 시 ${dr.mxDU30}mg 초과`);
         if(dr.aMxPD&&dH>dr.aMxPD)ma.push({t:'성인 1회 최대 초과',d:`성인 1회 ${dr.aMxPD}mg 초과`,calc:`${dH.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
         if(dr.aMxDD&&ddH>dr.aMxDD)ma.push({t:'성인 1일 최대 초과',d:`성인 1일 ${dr.aMxDD}mg 초과`,calc:`${ddH.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
-        // 핵심 처방 박스: 간편 mL + 횟수 + 기간
-        const mainMl=dr.qml?(dr.qml*wt).toFixed(1):mL.toFixed(1);
-        const mainMg=dr.qml?(dr.qml*wt*c).toFixed(0):dL.toFixed(0);
-        h+=`<div class="result-detail" style="border:2.5px solid var(--success);background:#f0fdf4;padding:14px;text-align:center">
-            <div class="value highlight" style="font-size:1.6rem">${mainMl} mL</div>
-            <div style="font-size:1rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
-            <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}${dr.qml?` | 간편 ${dr.qml}mL/kg`:''}</div>
+        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수
+        const recMl=Math.round(mL);
+        const recMg=recMl*c;
+        const recDaily=recMg*dr.fr;
+        // 반올림 추천값 초과 체크
+        if(dr.mxDU30&&wt<=30&&recDaily>dr.mxDU30)ma.push({t:`추천 용량 1일 최대 초과 (30kg이하)`,d:`반올림 ${recMl}mL x ${dr.fr}회 = ${recDaily.toFixed(0)}mg/day`,calc:`${recDaily.toFixed(0)}mg/day`,lim:`${dr.mxDU30}mg/day`});
+        if(dr.aMxPD&&recMg>dr.aMxPD)ma.push({t:`추천 용량 성인 1회 최대 초과`,d:`반올림 ${recMl}mL = ${recMg.toFixed(0)}mg`,calc:`${recMg.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
+        const boxColor=(ma.length>0)?'var(--danger)':'var(--success)';
+        const boxBg=(ma.length>0)?'#fef2f2':'#f0fdf4';
+        h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
+            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
+            <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
+            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg &times; ${wt}kg = ${dL.toFixed(1)}mg → ${mL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>
         </div>`;
         h+=`<div class="result-grid"><div class="result-detail"><div class="label">권장 (${dr.dL}mg/kg)</div><div class="value" style="font-size:0.95rem">${mL.toFixed(1)}mL (${dL.toFixed(0)}mg)</div></div>
             <div class="result-detail"><div class="label">최대 (${dr.dH}mg/kg)</div><div class="value" style="font-size:0.95rem">${mH.toFixed(1)}mL (${dH.toFixed(0)}mg)</div></div></div>`;
@@ -572,12 +578,19 @@ function buildSyrupHTML(dr,age,wt){
         if(dr.aMxDD&&ddL>dr.aMxDD)ma.push({t:'성인 1일 최대 초과(일반)',d:`성인 ${dr.aMxDD}mg 초과`,calc:`${ddL.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
         else if(dr.aMxDD&&ddH>dr.aMxDD)ma.push({t:'성인 1일 최대 초과(중증)',d:`성인 ${dr.aMxDD}mg 초과`,calc:`${ddH.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
         if(dr.aMxPD&&pdH>dr.aMxPD)ma.push({t:'성인 1회 최대 초과',d:`성인 1회 ${dr.aMxPD}mg 초과`,calc:`${pdH.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
-        // 핵심 처방 박스
-        const mainMl=dr.qml?(dr.qml*wt).toFixed(1):mPDL.toFixed(1);
-        h+=`<div class="result-detail" style="border:2.5px solid var(--success);background:#f0fdf4;padding:14px;text-align:center">
-            <div class="value highlight" style="font-size:1.6rem">${mainMl} mL</div>
-            <div style="font-size:1rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
-            <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}${dr.qml?` | 간편 ${dr.qml}mL/kg`:''}</div>
+        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수
+        const recMl=Math.round(mPDL);
+        const recMg=recMl*c;
+        const recDaily=recMg*dr.fr;
+        if(dr.aMxDD&&recDaily>dr.aMxDD)ma.push({t:`추천 용량 성인 1일 최대 초과`,d:`반올림 ${recMl}mL x ${dr.fr}회 = ${recDaily.toFixed(0)}mg/day`,calc:`${recDaily.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
+        if(dr.aMxPD&&recMg>dr.aMxPD)ma.push({t:`추천 용량 성인 1회 최대 초과`,d:`반올림 ${recMl}mL = ${recMg.toFixed(0)}mg`,calc:`${recMg.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
+        const boxColor=(ma.length>0)?'var(--danger)':'var(--success)';
+        const boxBg=(ma.length>0)?'#fef2f2':'#f0fdf4';
+        h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
+            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
+            <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
+            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg/day &times; ${wt}kg &divide; ${dr.fr}회 = ${mPDL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>
         </div>`;
         h+=`<div class="result-grid"><div class="result-detail"><div class="label">일반 (${dr.dL}mg/kg/day)</div><div class="value" style="font-size:0.95rem">${mPDL.toFixed(1)}mL (${pdL.toFixed(0)}mg)/회</div></div>
             <div class="result-detail"><div class="label">중증 (${dr.dH}mg/kg/day)</div><div class="value" style="font-size:0.95rem">${mPDH.toFixed(1)}mL (${pdH.toFixed(0)}mg)/회</div></div></div>`;
