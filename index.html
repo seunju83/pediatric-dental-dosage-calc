@@ -38,6 +38,15 @@
         .card-title{font-size:0.88rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
         .icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;}
         .icon-patient{background:#dbeafe;color:#2563eb;} .icon-drug{background:#fce7f3;color:#db2777;}
+        .patient-inputs{display:flex;gap:12px;margin-bottom:10px;}
+        .patient-input-box{flex:1;background:var(--gray-50);border:2px solid var(--gray-200);border-radius:12px;
+            padding:12px 14px;text-align:center;transition:0.2s;cursor:pointer;}
+        .patient-input-box:focus-within{border-color:var(--primary);background:white;box-shadow:0 0 0 4px var(--primary-light);}
+        .patient-input-box .input-label{font-size:0.78rem;font-weight:700;color:var(--gray-500);margin-bottom:6px;display:block;}
+        .patient-input-box .input-unit{font-size:0.82rem;font-weight:600;color:var(--gray-400);margin-left:2px;}
+        .patient-input-box input{width:100%;border:none;background:transparent;outline:none;
+            font-size:1.8rem;font-weight:800;color:var(--gray-800);text-align:center;padding:4px 0;}
+        .patient-input-box input::placeholder{color:var(--gray-300);font-weight:600;}
         .input-row{display:flex;gap:8px;margin-bottom:8px;}
         .input-group{flex:1;}
         .input-group label{display:block;font-size:0.72rem;font-weight:600;color:var(--gray-600);margin-bottom:3px;}
@@ -153,9 +162,15 @@
     <div class="left-panel">
         <div class="card">
             <div class="card-title"><div class="icon icon-patient">&#x1F9D2;</div>환자 정보</div>
-            <div class="input-row">
-                <div class="input-group"><label>나이 (세)</label><input type="number" id="ageYear" placeholder="세" min="2" max="15"></div>
-                <div class="input-group"><label>몸무게 (kg)</label><input type="number" id="weight" placeholder="kg" min="5" max="80" step="0.5"></div>
+            <div class="patient-inputs">
+                <div class="patient-input-box" onclick="this.querySelector('input').focus()">
+                    <span class="input-label">나이 <span class="input-unit">세</span></span>
+                    <input type="number" id="ageYear" placeholder="0" min="2" max="15">
+                </div>
+                <div class="patient-input-box" onclick="this.querySelector('input').focus()">
+                    <span class="input-label">몸무게 <span class="input-unit">kg</span></span>
+                    <input type="number" id="weight" placeholder="0" min="5" max="80" step="0.5">
+                </div>
             </div>
             <div class="age-presets">
                 <button class="age-preset-btn" onclick="setP(2,12)">2세/12kg</button>
