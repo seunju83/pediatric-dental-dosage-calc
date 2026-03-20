@@ -438,7 +438,7 @@ function renderList(){
         const sel=selDrugs.has(d.id);
         const dn=dispName(d);
         return`<div class="drug-item ${sel?'selected':''}" onclick="toggleDrug('${d.id}')">
-            <div class="drug-name">${sel?'&#x2611; ':'&#x2610; '}${dn}</div><div class="drug-component">${d.comp}</div>
+            <div class="drug-name">${dn}</div><div class="drug-component">${d.comp}</div>
             ${dn!==d.name?`<div class="drug-info" style="color:var(--gray-400)">(${d.name})</div>`:''}</div>`;
     }).join('');
 }
