@@ -331,7 +331,7 @@ tablet: {
           note:'큰 소아/성인용.', src:'식약처 허가사항' },
         { id:'t_aug375', name:'오구멘틴정 375mg', comp:'아목시실린250mg+클라불란산125mg', ex:'오구멘틴정',
           mg:375, unit:'정', aDose:'1정', aFr:3, aFrL:'1일 3회', aDmg:1125, dur:'5~7일',
-          note:'식사 초기 투여.', src:'식약처 허가사항' },
+          noGrind:true, note:'흡습성 높아 가루약 불가. 식사 초기 투여.', src:'식약처 허가사항' },
         { id:'t_cefaclor250', name:'세파클러 캡슐 250mg', comp:'세파클러 250mg', ex:'씨클러캡슐',
           mg:250, unit:'캡슐', aDose:'1캡슐', aFr:3, aFrL:'1일 3회', aDmg:750, dur:'5~7일',
           note:'2세대 세팔로스포린.', src:'식약처 허가사항' },
@@ -444,14 +444,21 @@ function findD(id){for(const f of Object.values(D))for(const c of Object.values(
 
 function getTabRx(dr,fr,frac){
     const isCap = dr.unit==='캡슐';
-    if(frac<=0.25)return{rx:'시럽제 권장',w:true};
+    const noGrind = dr.noGrind; // 흡습성 등으로 가루약 불가
+    if(frac<=0.25){
+        if(noGrind) return{rx:'시럽제 권장 (가루약 불가)',w:true};
+        return{rx:'시럽제 권장',w:true};
+    }
     if(frac<=0.5){
         if(isCap){
-            // 캡슐은 분할 불가
-            if(fr>=3)return{rx:`1${dr.unit} x 1일 1회 (캡슐 분할불가)`,w:false};
-            return{rx:`1${dr.unit} x 1일 1회`,w:false};
+            // 캡슐: 가루약으로 0.5캡슐 처방
+            return{rx:`가루약 0.5${dr.unit} x 1일 ${fr>=3?2:1}회`,w:false};
         }
-        // 정제는 반정 분할 가능
+        if(noGrind){
+            // 흡습성 정제: 가루약 불가 → 시럽 권장
+            return{rx:'시럽제 권장 (흡습성 높아 가루약 불가)',w:true};
+        }
+        // 일반 정제: 반정 분할
         return{rx:`0.5${dr.unit} x 1일 ${fr}회`,w:false};
     }
     if(frac<=0.67){
