@@ -701,7 +701,8 @@ function renderRefTable(){
 // 설정
 // ================================================================
 function openSettings(){
-    let h='<div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:12px;padding:8px;background:var(--gray-50);border-radius:6px;">체크: 사용 약물 선택 | 상품명: 우리 병원 약 이름 입력 (비우면 기본명)</div>';
+    let h='<div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:8px;padding:8px;background:var(--gray-50);border-radius:6px;">체크: 사용 약물 선택 | 상품명: 우리 병원 약 이름 입력 (비우면 기본명)</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="setAllChecks(true)" style="flex:1;padding:6px;border:1.5px solid var(--primary);border-radius:6px;background:var(--primary-light);color:var(--primary);font-size:0.78rem;font-weight:600;cursor:pointer;">전체 선택</button><button onclick="setAllChecks(false)" style="flex:1;padding:6px;border:1.5px solid var(--gray-300);border-radius:6px;background:white;color:var(--gray-600);font-size:0.78rem;font-weight:600;cursor:pointer;">전체 해제</button></div>';
     for(const[form,cats] of Object.entries(D)){
         for(const[cat,drugs] of Object.entries(cats)){
             h+=`<div class="settings-section"><h4>${FORM_LABELS[form]} — ${CAT_LABELS[cat]}</h4>`;
@@ -723,6 +724,7 @@ function openSettings(){
     document.getElementById('setPanel').classList.add('show');
 }
 function closeSet(){document.getElementById('setPanel').classList.remove('show');}
+function setAllChecks(val){document.querySelectorAll('#setBody input[type=checkbox]').forEach(cb=>cb.checked=val);}
 function saveSet(){
     const s={};const n={};
     for(const f of Object.values(D))for(const c of Object.values(f))c.forEach(d=>{
