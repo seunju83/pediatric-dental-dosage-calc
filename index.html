@@ -206,7 +206,10 @@
             <div class="drug-list" id="drugList"></div>
         </div>
         <button class="calculate-btn" onclick="calculate()">처방 용량 계산</button>
-        <button class="reset-btn" onclick="resetAll()">초기화</button>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+            <button class="reset-btn" style="margin-top:0" onclick="resetAll()">초기화</button>
+            <button class="reset-btn" style="margin-top:0" onclick="goHome()">처음으로</button>
+        </div>
     </div>
     <div class="right-panel">
         <div class="right-grid">
@@ -292,8 +295,8 @@ syrup: {
     ],
     analgesic: [
         { id:'s_tylenol', name:'어린이 타이레놀 시럽', comp:'아세트아미노펜 160mg/5mL (32mg/mL)', ex:'어린이타이레놀현탁액',
-          conc:32, dL:10, dH:15, fr:4, frL:'4~6시간마다 (최대5회)', dur:'필요시(3~5일)', mxD:2400, mxDPKD:75, aMxPD:1000, aMxDD:4000, pd:true,
-          qml:0.4, qmlNote:'1회 0.4mL/kg', note:'출혈경향 없어 발치 후 안전. 간질환 주의.', src:'식약처 허가사항' },
+          conc:32, dL:10, dH:15, fr:3, frL:'1일 3회 (필요시 4~6시간마다, 최대5회)', dur:'필요시(3~5일)', mxD:2400, mxDPKD:75, aMxPD:1000, aMxDD:4000, pd:true,
+          note:'출혈경향 없어 발치 후 안전. 간질환 주의.', src:'식약처 허가사항' },
     ],
     probiotic: [
         { id:'s_rhamnosus', name:'람노스 과립 1g', comp:'유산균(L. rhamnosus) 1g/포', ex:'람노스과립',
@@ -371,8 +374,8 @@ tablet: {
         { id:'t_medilac', name:'메디락에스산', comp:'유산균복합제 1g/포', ex:'메디락에스산 (한미약품)',
           isProbiotic:true,
           rules:[
-              {label:'3세 미만', min:0, max:3, dose:'0.5g (반포)', freq:'1일 3회'},
-              {label:'3~12세', min:3, max:13, dose:'0.5g (반포)', freq:'1일 3회'},
+              {label:'3세 미만', min:0, max:3, dose:'0.5g', freq:'1일 3회'},
+              {label:'3~12세', min:3, max:13, dose:'0.5g', freq:'1일 3회'},
               {label:'13세 이상', min:13, max:99, dose:'1포', freq:'1일 3회'},
           ],
           note:'장내 균총 정상화. 항생제와 2시간 간격 권장.', src:'임상 용법 기준' },
@@ -393,6 +396,7 @@ let curForm='syrup', curCat='antibiotics';
 let selDrugs=new Set(); // 다중 선택
 let pHTML='', pRxHTML='', pDrug=null, pAge=0, pWt=0;
 let hospDrugs = JSON.parse(localStorage.getItem('hospDrugs')||'null');
+let hospNames = JSON.parse(localStorage.getItem('hospNames')||'{}'); // 병원별 상품명
 
 function setP(y,w){document.getElementById('ageYear').value=y;document.getElementById('weight').value=w;}
 
@@ -412,6 +416,7 @@ function renderCats(){
     document.getElementById('catTabs').innerHTML=cats.map(c=>`<button class="category-tab ${c===curCat?'active':''}" onclick="selCat('${c}',this)">${CAT_LABELS[c]}</button>`).join('');
 }
 function isOn(id){return !hospDrugs||hospDrugs[id]!==false;}
+function dispName(d){return hospNames[d.id]||d.name;}
 
 function toggleDrug(id){
     if(selDrugs.has(id))selDrugs.delete(id);
@@ -425,7 +430,7 @@ function renderBadges(){
     if(selDrugs.size===0){el.innerHTML='<div class="sel-empty">약물을 클릭하여 추가하세요</div>';return;}
     el.innerHTML=[...selDrugs].map(id=>{
         const dr=findD(id);if(!dr)return'';
-        return`<span class="sel-badge">${dr.name}<span class="badge-x" onclick="event.stopPropagation();removeDrug('${id}')">&times;</span></span>`;
+        return`<span class="sel-badge">${dispName(dr)}<span class="badge-x" onclick="event.stopPropagation();removeDrug('${id}')">&times;</span></span>`;
     }).join('');
 }
 
@@ -434,9 +439,10 @@ function renderList(){
     document.getElementById('drugList').innerHTML=drugs.map(d=>{
         if(!isOn(d.id))return`<div class="drug-item hidden"></div>`;
         const sel=selDrugs.has(d.id);
+        const dn=dispName(d);
         return`<div class="drug-item ${sel?'selected':''}" onclick="toggleDrug('${d.id}')">
-            <div class="drug-name">${sel?'&#x2611; ':'&#x2610; '}${d.name}</div><div class="drug-component">${d.comp}</div>
-            <div class="drug-info">${d.ex}</div></div>`;
+            <div class="drug-name">${sel?'&#x2611; ':'&#x2610; '}${dn}</div><div class="drug-component">${d.comp}</div>
+            ${dn!==d.name?`<div class="drug-info" style="color:var(--gray-400)">(${d.name})</div>`:''}</div>`;
     }).join('');
 }
 
@@ -536,7 +542,7 @@ function buildCombinedRx(ids,age,wt){
             else{const ml=Math.round(dr.dL*wt/dr.fr/c);rxText=`1회 ${ml}mL ${dr.frL} / ${dr.dur}`;}
         }
         h+=`<div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--gray-100);">
-            <div style="flex:1;font-size:0.8rem"><strong>${num}. ${dr.name}</strong><br><span style="color:var(--gray-600)">${rxText}</span></div>
+            <div style="flex:1;font-size:0.8rem"><strong>${num}. ${dispName(dr)}</strong><br><span style="color:var(--gray-600)">${rxText}</span></div>
             <button onclick="removeDrug('${id}');calculate();" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:1rem;padding:2px 4px;line-height:1;" title="삭제">&times;</button>
         </div>`;
         num++;
@@ -547,7 +553,7 @@ function buildCombinedRx(ids,age,wt){
 
 function buildProbioticHTML(dr,age){
     const rule=dr.rules.find(r=>age>=r.min&&age<r.max)||dr.rules[dr.rules.length-1];
-    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dr.name}</div>`;
+    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
     h+=`<div class="result-detail"><div class="label">연령 구간: ${rule.label}</div>
         <div class="value highlight">${rule.dose} ${rule.freq}</div></div>`;
     dr.rules.forEach(r=>{
@@ -561,7 +567,7 @@ function buildProbioticHTML(dr,age){
 function buildTabletHTML(dr,age,wt){
     const b=WB.find(x=>wt>=x.mn&&wt<x.mx);
     const rx=getTabRx(dr,dr.aFr,b.f);
-    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dr.name}</div>`;
+    let h=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
     if(rx.w){h+=`<div class="result-detail" style="border:2px solid var(--danger);background:#fef2f2"><div class="label" style="color:var(--danger)">${b.l} (${b.fl})</div><div class="value" style="color:var(--danger);font-size:1.05rem">${rx.rx}</div></div>`;}
     else{h+=`<div class="result-detail" style="border:2px solid var(--success);background:#f0fdf4"><div class="label" style="color:var(--success)">${b.l} → 성인의 ${b.fl}</div><div class="value highlight" style="font-size:1.2rem">${rx.rx}</div><div class="sub">${dr.dur}</div></div>`;}
     h+=`<div class="weight-bracket">`;
@@ -573,7 +579,7 @@ function buildTabletHTML(dr,age,wt){
 
 function buildSyrupHTML(dr,age,wt){
     let warn=[],ma=[],h='';const c=dr.conc;
-    h+=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dr.name}</div>`;
+    h+=`<div style="margin-bottom:4px;font-weight:700;font-size:0.88rem;color:var(--gray-700);">${dispName(dr)}</div>`;
 
     if(dr.pd){
         const dL=dr.dL*wt,dH=dr.dH*wt,mL=dL/c,mH=dH/c,ddL=dL*dr.fr,ddH=dH*dr.fr;
@@ -635,6 +641,11 @@ function closeModalShow(){closeModal();showMultiRes();}
 function resetAll(){document.getElementById('ageYear').value='';document.getElementById('weight').value='';selDrugs.clear();
     document.getElementById('resBox').classList.remove('show');document.getElementById('rxBox').classList.remove('show');
     document.getElementById('phCard').style.display='';renderList();renderBadges();}
+function goHome(){resetAll();curForm='syrup';curCat='antibiotics';
+    document.querySelectorAll('.form-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    renderCats();renderList();window.scrollTo({top:0,behavior:'smooth'});
+    document.querySelectorAll('.page-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    document.querySelectorAll('.page-content').forEach((c,i)=>c.classList.toggle('active',i===0));}
 
 // ================================================================
 // 용량표
@@ -693,12 +704,22 @@ function renderRefTable(){
 // 설정
 // ================================================================
 function openSettings(){
-    let h='';
+    let h='<div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:12px;padding:8px;background:var(--gray-50);border-radius:6px;">체크: 사용 약물 선택 | 상품명: 우리 병원 약 이름 입력 (비우면 기본명)</div>';
     for(const[form,cats] of Object.entries(D)){
         for(const[cat,drugs] of Object.entries(cats)){
             h+=`<div class="settings-section"><h4>${FORM_LABELS[form]} — ${CAT_LABELS[cat]}</h4>`;
-            drugs.forEach(d=>{const ck=isOn(d.id)?'checked':'';
-                h+=`<div class="settings-item"><input type="checkbox" id="s_${d.id}" ${ck}><div>${d.name}<div style="font-size:0.7rem;color:var(--gray-500)">${d.comp}</div></div></div>`;
+            drugs.forEach(d=>{
+                const ck=isOn(d.id)?'checked':'';
+                const curName=hospNames[d.id]||'';
+                h+=`<div class="settings-item">
+                    <input type="checkbox" id="s_${d.id}" ${ck}>
+                    <div style="flex:1">
+                        <div style="font-size:0.78rem;font-weight:600">${d.name}</div>
+                        <div style="font-size:0.68rem;color:var(--gray-400)">${d.comp}</div>
+                        <input type="text" id="n_${d.id}" value="${curName}" placeholder="우리 병원 상품명"
+                            style="margin-top:3px;width:100%;padding:4px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.75rem;outline:none;">
+                    </div>
+                </div>`;
             });h+=`</div>`;}
     }
     document.getElementById('setBody').innerHTML=h;
@@ -706,8 +727,15 @@ function openSettings(){
 }
 function closeSet(){document.getElementById('setPanel').classList.remove('show');}
 function saveSet(){
-    const s={};for(const f of Object.values(D))for(const c of Object.values(f))c.forEach(d=>{const cb=document.getElementById('s_'+d.id);if(cb)s[d.id]=cb.checked;});
-    hospDrugs=s;localStorage.setItem('hospDrugs',JSON.stringify(s));closeSet();renderList();
+    const s={};const n={};
+    for(const f of Object.values(D))for(const c of Object.values(f))c.forEach(d=>{
+        const cb=document.getElementById('s_'+d.id);if(cb)s[d.id]=cb.checked;
+        const ni=document.getElementById('n_'+d.id);if(ni&&ni.value.trim())n[d.id]=ni.value.trim();
+    });
+    hospDrugs=s;hospNames=n;
+    localStorage.setItem('hospDrugs',JSON.stringify(s));
+    localStorage.setItem('hospNames',JSON.stringify(n));
+    closeSet();renderList();renderBadges();
 }
 
 renderCats();renderList();
