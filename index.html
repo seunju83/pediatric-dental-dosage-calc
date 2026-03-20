@@ -285,8 +285,8 @@ syrup: {
           conc:50, dL:25, dH:50, fr:4, frL:'1일 2~4회', dur:'5~7일', mxD:2000, aMxPD:1000, aMxDD:4000, pd:false,
           qml:null, note:'1세대 세팔로스포린.', src:'식약처 허가사항' },
         { id:'s_clarithro', name:'클래리스로마이신 시럽', comp:'클래리스로마이신 125mg/5mL (25mg/mL)', ex:'클래리시드, 클래리건조시럽',
-          conc:25, dL:7.5, dH:15, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1000, aMxPD:500, aMxDD:1000, pd:false,
-          qml:0.2, qmlNote:'1회 0.2mL/kg (BID)', note:'마크로라이드계. 페니실린 알레르기 시 대체약.', src:'식약처 허가사항' },
+          conc:25, dL:7.5, dH:7.5, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1000, aMxPD:500, aMxDD:1000, pd:false,
+          note:'마크로라이드계. 페니실린 알레르기 시 대체약. 1회 7.5mg/kg BID (=15mg/kg/day).', src:'식약처 허가사항' },
     ],
     nsaid: [
         { id:'s_brufen', name:'부루펜시럽 (이부프로펜)', comp:'이부프로펜 100mg/5mL (20mg/mL)', ex:'어린이부루펜시럽',
@@ -657,9 +657,9 @@ function goHome(){resetAll();curForm='syrup';curCat='antibiotics';
 // 용량표
 // ================================================================
 function renderRefTable(){
-    let h='<h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">허가사항 기준 소아 용량표</h3>';
+    let h='<h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">소아 용량 참고표</h3>';
     // 시럽
-    h+='<h4 style="margin:16px 0 8px;font-size:0.9rem;color:var(--primary)">시럽제</h4>';
+    h+='<h4 style="margin:16px 0 8px;font-size:0.9rem;color:var(--primary)">시럽제 (허가사항 기준)</h4>';
     h+='<table class="ref-table"><tr><th>약물</th><th>농도</th><th>소아 용량 (허가)</th><th>투여</th><th>1일 최대</th><th>간편 mL/kg</th></tr>';
     for(const[cat,drugs] of Object.entries(D.syrup)){
         if(cat==='probiotic')continue;
@@ -690,7 +690,7 @@ function renderRefTable(){
     });
     h+='</table>';
     // 알약
-    h+='<h4 style="margin:16px 0 8px;font-size:0.9rem;color:var(--primary)">정제·캡슐 (체중구간별 처방 기준)</h4>';
+    h+='<h4 style="margin:16px 0 8px;font-size:0.9rem;color:var(--primary)">정제·캡슐 (임상 실무 처방 가이드 — 허가사항 아님)</h4>';
     h+='<table class="ref-table"><tr><th>약물</th><th>성인용량</th><th>15kg미만(1/4)</th><th>15~30kg(1/2)</th><th>30~40kg(2/3)</th><th>40kg+(성인)</th></tr>';
     for(const[cat,drugs] of Object.entries(D.tablet)){
         if(cat==='probiotic')continue;
