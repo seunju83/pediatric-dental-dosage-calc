@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소아 치과 처방 용량 계산기</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --success: #16a34a;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 50%, #f5f3ff 100%);
+            color: var(--gray-800);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            color: white;
+            padding: 16px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .app-header h1 { font-size: 1.3rem; font-weight: 700; }
+        .app-header .subtitle { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+
+        /* ===== 와이드 레이아웃 ===== */
+        .main-layout {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 900px) {
+            .main-layout {
+                grid-template-columns: 420px 1fr;
+                align-items: start;
+            }
+            .left-panel { position: sticky; top: 20px; }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card:last-child { margin-bottom: 0; }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon {
+            width: 26px; height: 26px;
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; flex-shrink: 0;
+        }
+        .icon-patient { background: #dbeafe; color: #2563eb; }
+        .icon-drug { background: #fce7f3; color: #db2777; }
+        .icon-result { background: #dcfce7; color: #16a34a; }
+
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+
+        .input-group { flex: 1; }
+        .input-group label {
+            display: block; font-size: 0.78rem; font-weight: 600;
+            color: var(--gray-600); margin-bottom: 5px;
+        }
+        .input-group input, .input-group select {
+            width: 100%; padding: 9px 12px;
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            font-size: 0.95rem; color: var(--gray-800);
+            background: var(--gray-50); transition: all 0.2s; outline: none;
+        }
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary); background: white;
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .input-group input::placeholder { color: var(--gray-300); }
+
+        .age-presets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+        .age-preset-btn {
+            padding: 4px 9px; border: 1.5px solid var(--gray-200);
+            border-radius: 6px; background: white; font-size: 0.72rem;
+            color: var(--gray-600); cursor: pointer; transition: all 0.15s;
+        }
+        .age-preset-btn:hover {
+            border-color: var(--primary); color: var(--primary); background: var(--primary-light);
+        }
+
+        .category-tabs { display: flex; gap: 5px; margin-bottom: 12px; }
+        .category-tab {
+            padding: 7px 13px; border: 1.5px solid var(--gray-200);
+            border-radius: 20px; background: white; font-size: 0.8rem;
+            font-weight: 600; color: var(--gray-500); cursor: pointer;
+            white-space: nowrap; transition: all 0.2s;
+        }
+        .category-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .category-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+        .drug-list { display: flex; flex-direction: column; gap: 6px; }
+        .drug-item {
+            padding: 10px 12px; border: 1.5px solid var(--gray-200);
+            border-radius: 9px; cursor: pointer; transition: all 0.2s; background: white;
+        }
+        .drug-item:hover { border-color: var(--primary); background: var(--primary-light); }
+        .drug-item.selected {
+            border-color: var(--primary); background: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+        }
+        .drug-item .drug-name { font-weight: 700; font-size: 0.88rem; }
+        .drug-item .drug-info { font-size: 0.74rem; color: var(--gray-500); margin-top: 2px; }
+        .drug-item .drug-component { font-size: 0.74rem; color: var(--primary); font-weight: 500; margin-top: 1px; }
+
+        .calculate-btn {
+            width: 100%; padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s; box-shadow: var(--shadow-md); margin-top: 10px;
+        }
+        .calculate-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+        .calculate-btn:active { transform: translateY(0); }
+
+        /* ===== 결과 패널 ===== */
+        .right-panel { min-height: 200px; }
+
+        .result-placeholder {
+            text-align: center; padding: 60px 20px;
+            color: var(--gray-300); font-size: 0.9rem;
+        }
+
+        .result-box { display: none; }
+        .result-box.show { display: block; }
+
+        .result-header {
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+            color: white; padding: 14px 16px;
+            border-radius: var(--radius) var(--radius) 0 0;
+            margin: -20px -20px 16px -20px;
+        }
+        .result-header h3 { font-size: 0.95rem; }
+        .result-header .result-drug-name { font-size: 0.82rem; opacity: 0.9; margin-top: 2px; }
+
+        .result-detail {
+            padding: 12px; background: var(--gray-50);
+            border-radius: 10px; margin-bottom: 8px;
+        }
+        .result-detail .label {
+            font-size: 0.74rem; color: var(--gray-500);
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .result-detail .value {
+            font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: 2px;
+        }
+        .result-detail .value.highlight { color: var(--success); font-size: 1.4rem; }
+        .result-detail .sub { font-size: 0.76rem; color: var(--gray-500); margin-top: 1px; }
+
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .result-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+        .result-note {
+            margin-top: 12px; padding: 10px 12px; background: #fffbeb;
+            border: 1px solid #fde68a; border-radius: 8px;
+            font-size: 0.78rem; color: #92400e;
+        }
+        .result-note.danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+        .result-prescription {
+            margin-top: 12px; padding: 12px; background: #f0f9ff;
+            border: 1px solid #bae6fd; border-radius: 8px;
+        }
+        .result-prescription .rx-title {
+            font-size: 0.8rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px;
+        }
+        .result-prescription .rx-line {
+            font-size: 0.82rem; color: var(--gray-700); margin-bottom: 3px;
+        }
+
+        .source-info {
+            margin-top: 12px; padding: 10px 12px; background: var(--gray-50);
+            border-radius: 8px; font-size: 0.72rem; color: var(--gray-500);
+        }
+
+        .reset-btn {
+            width: 100%; padding: 10px; background: white;
+            color: var(--gray-500); border: 1.5px solid var(--gray-200);
+            border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; margin-top: 8px; transition: all 0.2s;
+        }
+        .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+        .disclaimer {
+            text-align: center; padding: 16px;
+            font-size: 0.7rem; color: var(--gray-500); line-height: 1.5;
+        }
+        .disclaimer strong { color: var(--danger); }
+
+        @media (max-width: 500px) {
+            .main-layout { padding: 10px; }
+            .card { padding: 14px; }
+            .result-header { margin: -14px -14px 14px -14px; }
+            .input-row { flex-direction: column; gap: 8px; }
+            .result-grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <h1>소아 치과 처방 용량 계산기</h1>
+        <div class="subtitle">Pediatric Dental Dosage Calculator</div>
+    </header>
+
+    <div class="main-layout">
+        <!-- ===== 왼쪽: 입력 패널 ===== -->
+        <div class="left-panel">
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon icon-patient">&#x1F9D2;</div>
+                    환자 정보
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>나이 (세)</label>
+                        <input type="number" id="ageYear" placeholder="세" min="2" max="15">
+                    </div>
+                    <div class="input-group">
+                        <label>몸무게 (kg)</label>
+                        <input type="number" id="weight" placeholder="kg" min="5" max="80" step="0.5">
+                    </div>
+                </div>
+                <div class="age-presets">
+                    <button class="age-preset-btn" onclick="setPreset(2,12)">2세/12kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(3,14)">3세/14kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(4,16)">4세/16kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(5,18)">5세/18kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(6,21)">6세/21kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(7,24)">7세/24kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(8,27)">8세/27kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(10,32)">10세/32kg</button>
+                    <button class="age-preset-btn" onclick="setPreset(12,40)">12세/40kg</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <div class="icon icon-drug">&#x1F48A;</div>
+                    약물 선택
+                </div>
+                <div class="category-tabs">
+                    <button class="category-tab active" onclick="selectCategory('antibiotics', this)">항생제</button>
+                    <button class="category-tab" onclick="selectCategory('nsaid', this)">소염진통제</button>
+                    <button class="category-tab" onclick="selectCategory('analgesic', this)">해열진통제</button>
+                </div>
+                <div class="drug-list" id="drugList"></div>
+            </div>
+
+            <button class="calculate-btn" onclick="calculate()">처방 용량 계산</button>
+            <button class="reset-btn" onclick="resetAll()">초기화</button>
+        </div>
+
+        <!-- ===== 오른쪽: 결과 패널 ===== -->
+        <div class="right-panel">
+            <div class="card" id="placeholderCard">
+                <div class="result-placeholder">
+                    환자 정보 입력 후 약물을 선택하고<br>
+                    <strong>[처방 용량 계산]</strong> 버튼을 누르세요
+                </div>
+            </div>
+            <div class="card result-box" id="resultBox">
+                <div class="result-header">
+                    <h3 id="resultTitle">처방 계산 결과</h3>
+                    <div class="result-drug-name" id="resultDrugName"></div>
+                </div>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        <strong>&#x26A0; 주의:</strong> 본 계산기는 참고용이며, 최종 처방은 반드시 환자의 상태,
+        알레르기 이력, 약물 상호작용 등을 고려하여 임상의가 판단해야 합니다.<br>
+        약학정보원, 의약품안전나라(nedrug.mfds.go.kr), 각 약물 허가사항 기준.
+    </div>
+
+    <script>
+    // ================================================================
+    // 약물 데이터베이스
+    // 출처: 약학정보원(health.kr), 의약품안전나라(nedrug.mfds.go.kr),
+    //       각 제품 허가사항 (식약처 승인)
+    // ================================================================
+    const DRUGS = {
+        antibiotics: [
+            {
+                id: 'amox_250',
+                name: '아목시실린 건조시럽',
+                examples: '오라셉건조시럽, 아목시실린건조시럽',
+                component: '아목시실린(Amoxicillin)',
+                concentrationMgPerMl: 50,  // 250mg/5mL
+                concentrationLabel: '250mg/5mL',
+                // 허가사항: 20kg 미만 소아 1일 20~40mg(역가)/kg, 3회 분할
+                dosePerKgDayLow: 20,   // mg/kg/day (경증)
+                dosePerKgDayHigh: 40,  // mg/kg/day (중증)
+                frequency: 3,
+                frequencyLabel: '1일 3회 (8시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1500, // 소아 최대 (20kg 이상은 성인용량)
+                perDose: false,
+                notes: '페니실린계 1차 선택약. 페니실린 알레르기 확인 필수.',
+                source: '식약처 허가사항, 약학정보원',
+            },
+            {
+                id: 'augmentin_156',
+                name: '오구멘틴시럽 156.25mg/5mL',
+                examples: '오구멘틴시럽 (4:1 비율)',
+                component: '아목시실린 125mg + 클라불란산 31.25mg /5mL',
+                concentrationMgPerMl: 25,  // amox 125mg/5mL
+                concentrationLabel: '156.25mg/5mL (아목시 125mg+클라불란산 31.25mg)',
+                // 허가사항: 일반감염 아목시실린/클라불란산 20mg/5mg /kg/day TID
+                // 중증감염 40mg/10mg /kg/day TID
+                dosePerKgDayLow: 20,   // amox mg/kg/day
+                dosePerKgDayHigh: 40,
+                frequency: 3,
+                frequencyLabel: '1일 3회 (8시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1500,
+                perDose: false,
+                notes: '4:1 비율. 경~중등도 감염. 식사 초기에 투여. 2개월 미만 임상자료 부족.',
+                source: '식약처 허가사항, nedrug.mfds.go.kr',
+                mlPerKgDay: true, // 0.8mL/kg/day (경증), 1.6mL/kg/day (중증) 표시
+                mlPerKgDayLow: 0.8,
+                mlPerKgDayHigh: 1.6,
+            },
+            {
+                id: 'augmentin_duo_228',
+                name: '오구멘틴듀오시럽 228mg/5mL',
+                examples: '오구멘틴듀오시럽 (7:1 비율)',
+                component: '아목시실린 200mg + 클라불란산 28.5mg /5mL',
+                concentrationMgPerMl: 40,  // amox 200mg/5mL
+                concentrationLabel: '228.5mg/5mL (아목시 200mg+클라불란산 28.5mg)',
+                // 허가사항: 일반 25mg/3.6mg /kg/day BID, 중증 45mg/6.4mg /kg/day BID
+                dosePerKgDayLow: 25,
+                dosePerKgDayHigh: 45,
+                frequency: 2,
+                frequencyLabel: '1일 2회 (12시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1800,
+                perDose: false,
+                notes: '7:1 비율. BID 투여로 복약순응도 향상. 식사 초기에 투여.',
+                source: '식약처 허가사항, nedrug.mfds.go.kr',
+            },
+            {
+                id: 'augmentin_forte_457',
+                name: '오구멘틴2배농축시럽 457mg/5mL',
+                examples: '오구멘틴2배농축시럽 (7:1 비율, 고농도)',
+                component: '아목시실린 400mg + 클라불란산 57mg /5mL',
+                concentrationMgPerMl: 80,  // amox 400mg/5mL
+                concentrationLabel: '457mg/5mL (아목시 400mg+클라불란산 57mg)',
+                // 듀오와 동일 mg/kg, 용량 절반
+                dosePerKgDayLow: 25,
+                dosePerKgDayHigh: 45,
+                frequency: 2,
+                frequencyLabel: '1일 2회 (12시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1800,
+                perDose: false,
+                notes: '듀오시럽 대비 2배 농축. 투여량 절반. 큰 소아에 유용. 식사 초기에 투여.',
+                source: '식약처 허가사항, nedrug.mfds.go.kr',
+            },
+            {
+                id: 'cefaclor_125',
+                name: '세파클러 건조시럽 125mg/5mL',
+                examples: '씨클러건조시럽, 케플러건조시럽',
+                component: '세파클러(Cefaclor)',
+                concentrationMgPerMl: 25,
+                concentrationLabel: '125mg/5mL',
+                // 허가사항: 1일 20mg(역가)/kg TID, 중증 40mg/kg/day, 최대 1g/day
+                dosePerKgDayLow: 20,
+                dosePerKgDayHigh: 40,
+                frequency: 3,
+                frequencyLabel: '1일 3회 (8시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1000,
+                perDose: false,
+                notes: '2세대 세팔로스포린. 페니실린 경도 알레르기 시 대체 가능 (교차반응 1~2% 주의).',
+                source: '식약처 허가사항',
+            },
+            {
+                id: 'cefaclor_250',
+                name: '세파클러 건조시럽 250mg/5mL',
+                examples: '씨클러건조시럽 250, 케플러건조시럽 포르테',
+                component: '세파클러(Cefaclor) 고농도',
+                concentrationMgPerMl: 50,
+                concentrationLabel: '250mg/5mL',
+                dosePerKgDayLow: 20,
+                dosePerKgDayHigh: 40,
+                frequency: 3,
+                frequencyLabel: '1일 3회 (8시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 1000,
+                perDose: false,
+                notes: '고농도 제형. 큰 소아에서 투여 용량이 많을 때 유용.',
+                source: '식약처 허가사항',
+            },
+            {
+                id: 'cephalexin_250',
+                name: '세팔렉신 건조시럽 250mg/5mL',
+                examples: '세파렉신건조시럽',
+                component: '세팔렉신(Cephalexin)',
+                concentrationMgPerMl: 50,
+                concentrationLabel: '250mg/5mL',
+                dosePerKgDayLow: 25,
+                dosePerKgDayHigh: 50,
+                frequency: 4,
+                frequencyLabel: '1일 2~4회 (6~12시간마다)',
+                duration: '5~7일',
+                maxDailyDoseMg: 2000,
+                perDose: false,
+                notes: '1세대 세팔로스포린. 그람양성균 효과적.',
+                source: '식약처 허가사항',
+            },
+        ],
+        nsaid: [
+            {
+                id: 'brufen_syrup',
+                name: '부루펜시럽 (이부프로펜)',
+                examples: '어린이부루펜시럽, 캐롤시럽',
+                component: '이부프로펜(Ibuprofen) 100mg/5mL',
+                concentrationMgPerMl: 20,
+                concentrationLabel: '100mg/5mL (20mg/mL)',
+                // 허가사항 (연령별):
+                // 1~2세: 50~100mg(3~5mL), 3~6세: 100~150mg(5~8mL)
+                // 7~10세: 150~200mg(8~10mL), 11~14세: 200~250mg(10~13mL)
+                // 체중기준: 약 5~10mg/kg/회, 1일 3~4회
+                // 30kg 미만 1일 500mg 초과 금지
+                dosePerKgLow: 5,    // mg/kg per dose (1회)
+                dosePerKgHigh: 10,
+                frequency: 3,
+                frequencyLabel: '1일 3회 (6~8시간마다)',
+                maxFrequency: 4,
+                duration: '3~5일 (통증 시)',
+                maxDailyDoseMg: 800, // 소아
+                maxDailyUnder30kg: 500,
+                perDose: true,
+                notes: '6개월 미만 금기. 공복 투여 피할 것. 30kg 미만 1일 500mg 초과 금지. 술 후 출혈경향 고려.',
+                source: '식약처 허가사항(nedrug), 약학정보원',
+                ageTable: [
+                    { label: '1~2세', min: 50, max: 100, mlMin: 2.5, mlMax: 5 },
+                    { label: '3~6세', min: 100, max: 150, mlMin: 5, mlMax: 7.5 },
+                    { label: '7~10세', min: 150, max: 200, mlMin: 7.5, mlMax: 10 },
+                    { label: '11~14세', min: 200, max: 250, mlMin: 10, mlMax: 12.5 },
+                ],
+            },
+            {
+                id: 'maxibufen',
+                name: '맥시부펜시럽 (덱시부프로펜)',
+                examples: '맥시부펜시럽 (한미약품)',
+                component: '덱시부프로펜(Dexibuprofen) 12mg/mL',
+                concentrationMgPerMl: 12,  // 1.2g/100mL
+                concentrationLabel: '60mg/5mL (12mg/mL)',
+                // 허가사항: 1회 5~7mg/kg (0.4~0.6mL/kg), 4~6시간 간격
+                // 1일 최대 4회 (28mg/kg), 30kg이하 1일 최대 300mg (25mL)
+                dosePerKgLow: 5,
+                dosePerKgHigh: 7,
+                frequency: 3,
+                frequencyLabel: '1일 3회 (4~6시간마다, 최대 4회)',
+                maxFrequency: 4,
+                duration: '3~5일',
+                maxDailyDoseMg: 600,
+                maxDailyUnder30kg: 300,
+                maxDosePerKgDay: 28,
+                perDose: true,
+                notes: '이부프로펜 활성 이성질체. 6개월 미만 금기. 30kg 이하 1일 25mL(300mg) 초과 금지.',
+                source: '식약처 허가사항, 한미약품 제품정보',
+                mlPerKgDose: true,
+                mlPerKgLow: 0.4,
+                mlPerKgHigh: 0.6,
+            },
+        ],
+        analgesic: [
+            {
+                id: 'tylenol_susp',
+                name: '어린이타이레놀산 (현탁액)',
+                examples: '어린이타이레놀현탁액',
+                component: '아세트아미노펜(Acetaminophen) 32mg/mL',
+                concentrationMgPerMl: 32,
+                concentrationLabel: '160mg/5mL (32mg/mL)',
+                // 허가사항: 10~15mg/kg/회, 4~6시간마다, 1일 최대 5회(75mg/kg)
+                dosePerKgLow: 10,
+                dosePerKgHigh: 15,
+                frequency: 4,
+                frequencyLabel: '4~6시간마다 (1일 최대 5회)',
+                maxFrequency: 5,
+                duration: '필요시 (3~5일)',
+                maxDailyDoseMg: 2400,
+                maxDosePerKgDay: 75,
+                perDose: true,
+                notes: 'NSAIDs 사용 곤란 시 1차 선택. 출혈경향 없어 발치 후 안전. 간질환 주의. 과량투여 금지.',
+                source: '식약처 허가사항, 타이레놀 공식 홈페이지',
+                weightTable: [
+                    { label: '8~11kg', dose: 120, ml: 3.75 },
+                    { label: '12~16kg', dose: 160, ml: 5 },
+                    { label: '16~23kg', dose: 240, ml: 7.5 },
+                    { label: '23~30kg', dose: 320, ml: 10 },
+                    { label: '30~38kg', dose: 400, ml: 12.5 },
+                    { label: '38~43kg', dose: 480, ml: 15 },
+                    { label: '43kg~', dose: 640, ml: 20 },
+                ],
+            },
+            {
+                id: 'champ_syrup',
+                name: '챔프시럽',
+                examples: '챔프시럽 (동아제약)',
+                component: '아세트아미노펜(Acetaminophen) 32mg/mL',
+                concentrationMgPerMl: 32,
+                concentrationLabel: '160mg/5mL (32mg/mL)',
+                dosePerKgLow: 10,
+                dosePerKgHigh: 15,
+                frequency: 4,
+                frequencyLabel: '4~6시간마다 (1일 최대 5회)',
+                maxFrequency: 5,
+                duration: '필요시 (3~5일)',
+                maxDailyDoseMg: 2400,
+                maxDosePerKgDay: 75,
+                perDose: true,
+                notes: '타이레놀산과 동일 농도/성분. 간독성 주의 (과량투여 금지). 1일 5회(75mg/kg) 초과 금지.',
+                source: '식약처 허가사항, 동아제약 제품정보',
+                weightTable: [
+                    { label: '8~11kg', dose: 120, ml: 3.75 },
+                    { label: '12~16kg', dose: 160, ml: 5 },
+                    { label: '16~23kg', dose: 240, ml: 7.5 },
+                    { label: '23~30kg', dose: 320, ml: 10 },
+                    { label: '30~38kg', dose: 400, ml: 12.5 },
+                    { label: '38~43kg', dose: 480, ml: 15 },
+                    { label: '43kg~', dose: 640, ml: 20 },
+                ],
+            },
+        ],
+    };
+
+    // ================================================================
+    let currentCategory = 'antibiotics';
+    let selectedDrug = null;
+
+    function setPreset(year, weight) {
+        document.getElementById('ageYear').value = year;
+        document.getElementById('weight').value = weight;
+    }
+
+    function selectCategory(cat, btn) {
+        currentCategory = cat;
+        selectedDrug = null;
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderDrugList();
+    }
+
+    function renderDrugList() {
+        const list = document.getElementById('drugList');
+        list.innerHTML = DRUGS[currentCategory].map(drug => `
+            <div class="drug-item ${selectedDrug === drug.id ? 'selected' : ''}"
+                 onclick="selectDrug('${drug.id}')">
+                <div class="drug-name">${drug.name}</div>
+                <div class="drug-component">${drug.component}</div>
+                <div class="drug-info">${drug.examples}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectDrug(id) {
+        selectedDrug = id;
+        renderDrugList();
+    }
+
+    function findDrug(id) {
+        for (const cat of Object.values(DRUGS)) {
+            const found = cat.find(d => d.id === id);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    // ================================================================
+    // 계산
+    // ================================================================
+    function calculate() {
+        const ageYear = parseInt(document.getElementById('ageYear').value) || 0;
+        const weight = parseFloat(document.getElementById('weight').value);
+
+        if (!weight || weight <= 0) { alert('몸무게를 입력해주세요.'); return; }
+        if (!selectedDrug) { alert('약물을 선택해주세요.'); return; }
+
+        const drug = findDrug(selectedDrug);
+        if (!drug) return;
+
+        let warnings = [];
+        let resultHTML = '';
+        const conc = drug.concentrationMgPerMl;
+
+        if (drug.perDose) {
+            // ===== 1회 용량 기반 (소염진통제, 해열진통제) =====
+            const doseLow = drug.dosePerKgLow * weight;   // mg/회
+            const doseHigh = drug.dosePerKgHigh * weight;  // mg/회
+            const mlLow = doseLow / conc;
+            const mlHigh = doseHigh / conc;
+
+            const dailyLow = doseLow * drug.frequency;
+            const dailyHigh = doseHigh * drug.frequency;
+
+            // 최대용량 체크
+            let maxCapped = false;
+            if (drug.maxDailyUnder30kg && weight < 30 && dailyHigh > drug.maxDailyUnder30kg) {
+                warnings.push(`30kg 미만: 1일 최대 ${drug.maxDailyUnder30kg}mg 초과 주의`);
+                maxCapped = true;
+            }
+            if (drug.maxDosePerKgDay && dailyHigh > drug.maxDosePerKgDay * weight) {
+                warnings.push(`1일 최대 ${drug.maxDosePerKgDay}mg/kg/day 초과 주의`);
+                maxCapped = true;
+            }
+            if (dailyHigh > drug.maxDailyDoseMg) {
+                warnings.push(`1일 절대 최대 용량 ${drug.maxDailyDoseMg}mg 초과 주의`);
+                maxCapped = true;
+            }
+
+            resultHTML = `
+                <div class="result-detail">
+                    <div class="label">1회 투여량 (권장: ${drug.dosePerKgLow}mg/kg)</div>
+                    <div class="value highlight">${mlLow.toFixed(1)} mL (${doseLow.toFixed(0)}mg)</div>
+                    <div class="sub">${drug.dosePerKgLow}mg/kg &times; ${weight}kg = ${doseLow.toFixed(1)}mg</div>
+                </div>
+                <div class="result-detail">
+                    <div class="label">1회 투여량 (최대: ${drug.dosePerKgHigh}mg/kg)</div>
+                    <div class="value">${mlHigh.toFixed(1)} mL (${doseHigh.toFixed(0)}mg)</div>
+                    <div class="sub">${drug.dosePerKgHigh}mg/kg &times; ${weight}kg = ${doseHigh.toFixed(1)}mg</div>
+                </div>
+            `;
+
+            // mL/kg 표시 (맥시부펜)
+            if (drug.mlPerKgDose) {
+                resultHTML += `
+                    <div class="result-detail">
+                        <div class="label">mL/kg 기준</div>
+                        <div class="value" style="font-size:1.05rem">1회 ${(drug.mlPerKgLow * weight).toFixed(1)}~${(drug.mlPerKgHigh * weight).toFixed(1)} mL</div>
+                        <div class="sub">${drug.mlPerKgLow}~${drug.mlPerKgHigh} mL/kg &times; ${weight}kg</div>
+                    </div>
+                `;
+            }
+
+            resultHTML += `
+                <div class="result-grid-3">
+                    <div class="result-detail">
+                        <div class="label">투여 간격</div>
+                        <div class="value" style="font-size:0.95rem">${drug.frequencyLabel}</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="label">투여 기간</div>
+                        <div class="value" style="font-size:0.95rem">${drug.duration}</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="label">제형 농도</div>
+                        <div class="value" style="font-size:0.85rem">${drug.concentrationLabel}</div>
+                    </div>
+                </div>
+            `;
+
+            // 허가사항 연령별 용량표 (이부프로펜)
+            if (drug.ageTable) {
+                let matched = drug.ageTable.find(row => {
+                    const ages = row.label.match(/(\d+)~(\d+)/);
+                    if (ages) return ageYear >= parseInt(ages[1]) && ageYear <= parseInt(ages[2]);
+                    return false;
+                });
+                if (matched) {
+                    resultHTML += `
+                        <div class="result-detail" style="border-left:3px solid var(--primary); margin-top:8px">
+                            <div class="label">허가사항 연령별 1회 용량 (${matched.label})</div>
+                            <div class="value" style="font-size:1.1rem">${matched.mlMin}~${matched.mlMax} mL (${matched.min}~${matched.max}mg)</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 허가사항 체중별 용량표 (아세트아미노펜)
+            if (drug.weightTable) {
+                let matched = drug.weightTable.find(row => {
+                    const m = row.label.match(/(\d+)~(\d+)/);
+                    if (m) return weight >= parseInt(m[1]) && weight < parseInt(m[2]);
+                    if (row.label.includes('~')) return weight >= parseInt(row.label);
+                    return false;
+                });
+                if (matched) {
+                    resultHTML += `
+                        <div class="result-detail" style="border-left:3px solid var(--success); margin-top:8px">
+                            <div class="label">허가사항 체중별 1회 용량 (${matched.label}kg)</div>
+                            <div class="value" style="font-size:1.1rem">${matched.ml} mL (${matched.dose}mg)</div>
+                        </div>
+                    `;
+                }
+            }
+
+            resultHTML += `
+                <div class="result-prescription">
+                    <div class="rx-title">처방 요약 (Rp.)</div>
+                    <div class="rx-line"><strong>${drug.name}</strong></div>
+                    <div class="rx-line">1회 ${mlLow.toFixed(1)} mL (${doseLow.toFixed(0)}mg)</div>
+                    <div class="rx-line">${drug.frequencyLabel}</div>
+                    <div class="rx-line">${drug.duration}</div>
+                </div>
+            `;
+
+        } else {
+            // ===== 1일 용량 기반 (항생제) =====
+            const dailyLow = drug.dosePerKgDayLow * weight;
+            const dailyHigh = drug.dosePerKgDayHigh * weight;
+            const perDoseLow = dailyLow / drug.frequency;
+            const perDoseHigh = dailyHigh / drug.frequency;
+            const mlPerDoseLow = perDoseLow / conc;
+            const mlPerDoseHigh = perDoseHigh / conc;
+            const mlPerDayLow = dailyLow / conc;
+            const mlPerDayHigh = dailyHigh / conc;
+
+            // 20kg 이상이면 성인 용량 적용 가능 알림
+            if (weight >= 20 && drug.id === 'amox_250') {
+                warnings.push('체중 20kg 이상: 성인용량(1회 250~500mg, 1일 3회) 적용 가능');
+            }
+            if (dailyHigh > drug.maxDailyDoseMg) {
+                warnings.push(`1일 최대 용량 ${drug.maxDailyDoseMg}mg에 근접/초과. 용량 조절 필요.`);
+            }
+
+            resultHTML = `
+                <div class="result-detail">
+                    <div class="label">1회 투여량 (일반 감염: ${drug.dosePerKgDayLow}mg/kg/day)</div>
+                    <div class="value highlight">${mlPerDoseLow.toFixed(1)} mL (${perDoseLow.toFixed(0)}mg)</div>
+                    <div class="sub">${drug.dosePerKgDayLow}mg/kg/day &times; ${weight}kg &divide; ${drug.frequency}회 = ${perDoseLow.toFixed(1)}mg/회</div>
+                </div>
+                <div class="result-detail">
+                    <div class="label">1회 투여량 (중증 감염: ${drug.dosePerKgDayHigh}mg/kg/day)</div>
+                    <div class="value">${mlPerDoseHigh.toFixed(1)} mL (${perDoseHigh.toFixed(0)}mg)</div>
+                    <div class="sub">${drug.dosePerKgDayHigh}mg/kg/day &times; ${weight}kg &divide; ${drug.frequency}회 = ${perDoseHigh.toFixed(1)}mg/회</div>
+                </div>
+            `;
+
+            // mL/kg/day 표시 (오구멘틴 156.25)
+            if (drug.mlPerKgDay) {
+                resultHTML += `
+                    <div class="result-detail">
+                        <div class="label">mL/kg/day 기준 (1일 총량)</div>
+                        <div class="value" style="font-size:1.05rem">경증 ${(drug.mlPerKgDayLow * weight).toFixed(1)} mL/day | 중증 ${(drug.mlPerKgDayHigh * weight).toFixed(1)} mL/day</div>
+                        <div class="sub">경증 ${drug.mlPerKgDayLow}mL/kg/day | 중증 ${drug.mlPerKgDayHigh}mL/kg/day</div>
+                    </div>
+                `;
+            }
+
+            resultHTML += `
+                <div class="result-grid-3">
+                    <div class="result-detail">
+                        <div class="label">투여 간격</div>
+                        <div class="value" style="font-size:0.95rem">${drug.frequencyLabel}</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="label">투여 기간</div>
+                        <div class="value" style="font-size:0.95rem">${drug.duration}</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="label">제형 농도</div>
+                        <div class="value" style="font-size:0.85rem">${drug.concentrationLabel}</div>
+                    </div>
+                </div>
+                <div class="result-grid">
+                    <div class="result-detail">
+                        <div class="label">1일 총 투여량 (경증)</div>
+                        <div class="value" style="font-size:1rem">${mlPerDayLow.toFixed(1)} mL (${dailyLow.toFixed(0)}mg)</div>
+                    </div>
+                    <div class="result-detail">
+                        <div class="label">1일 총 투여량 (중증)</div>
+                        <div class="value" style="font-size:1rem">${mlPerDayHigh.toFixed(1)} mL (${dailyHigh.toFixed(0)}mg)</div>
+                    </div>
+                </div>
+                <div class="result-prescription">
+                    <div class="rx-title">처방 요약 (Rp.)</div>
+                    <div class="rx-line"><strong>${drug.name}</strong></div>
+                    <div class="rx-line">1회 ${mlPerDoseLow.toFixed(1)} mL (${perDoseLow.toFixed(0)}mg) &mdash; 일반 감염 기준</div>
+                    <div class="rx-line">${drug.frequencyLabel}</div>
+                    <div class="rx-line">${drug.duration}</div>
+                    <div class="rx-line">1일 총 ${dailyLow.toFixed(0)}mg (${drug.dosePerKgDayLow}mg/kg/day)</div>
+                </div>
+            `;
+        }
+
+        // 경고
+        if (warnings.length > 0) {
+            resultHTML += `
+                <div class="result-note danger">
+                    <strong>&#x26A0; 주의</strong><br>
+                    ${warnings.map(w => '&bull; ' + w).join('<br>')}
+                </div>
+            `;
+        }
+
+        // 약물 참고
+        resultHTML += `
+            <div class="result-note">${drug.notes}</div>
+            <div class="source-info"><strong>출처:</strong> ${drug.source}</div>
+        `;
+
+        // 표시
+        document.getElementById('resultTitle').textContent = '처방 계산 결과';
+        document.getElementById('resultDrugName').textContent =
+            `${drug.name} | ${ageYear}세 / ${weight}kg`;
+        document.getElementById('resultContent').innerHTML = resultHTML;
+        document.getElementById('placeholderCard').style.display = 'none';
+        document.getElementById('resultBox').classList.add('show');
+    }
+
+    function resetAll() {
+        document.getElementById('ageYear').value = '';
+        document.getElementById('weight').value = '';
+        selectedDrug = null;
+        document.getElementById('resultBox').classList.remove('show');
+        document.getElementById('placeholderCard').style.display = '';
+        renderDrugList();
+    }
+
+    renderDrugList();
+    </script>
+</body>
+</html>
