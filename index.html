@@ -355,7 +355,7 @@ tablet: {
     ],
     analgesic: [
         { id:'t_tylenol500', name:'타이레놀 정 500mg', comp:'아세트아미노펜 500mg', ex:'타이레놀정',
-          mg:500, unit:'정', aDose:'1~2정', aFr:4, aFrL:'4~6시간마다', aDmg:2000, dur:'필요시',
+          mg:500, unit:'정', aDose:'1~2정', aFr:3, aFrL:'1일 3회', aDmg:1500, dur:'필요시',
           note:'간독성 주의. 1일 4g 초과 금지.', src:'식약처 허가사항' },
     ],
     probiotic: [
@@ -386,10 +386,11 @@ tablet: {
 }};
 
 const WB = [
-    {l:'15kg 미만',mn:0,mx:15,f:0.25,fl:'1/4',c:'var(--danger)'},
-    {l:'15~30kg',mn:15,mx:30,f:0.5,fl:'1/2',c:'var(--warning)'},
-    {l:'30~40kg',mn:30,mx:40,f:0.67,fl:'2/3',c:'var(--primary)'},
-    {l:'40kg 이상',mn:40,mx:999,f:1.0,fl:'성인용량',c:'var(--success)'},
+    {l:'15kg 미만',mn:0,mx:15,f:0.25,fl:'1/4',c:'var(--danger)',mode:'syrup'},
+    {l:'15~20kg',mn:15,mx:20,f:0.5,fl:'1/2',c:'var(--warning)',mode:'grind'},
+    {l:'20~30kg',mn:20,mx:30,f:0.67,fl:'2/3',c:'#e67e22',mode:'grind'},
+    {l:'30~40kg',mn:30,mx:40,f:0.67,fl:'2/3',c:'var(--primary)',mode:'whole'},
+    {l:'40kg 이상',mn:40,mx:999,f:1.0,fl:'성인용량',c:'var(--success)',mode:'whole'},
 ];
 
 const CAT_LABELS = {antibiotics:'항생제',nsaid:'소염진통제',analgesic:'해열진통제',probiotic:'정장제'};
@@ -454,29 +455,25 @@ function renderList(){
 
 function findD(id){for(const f of Object.values(D))for(const c of Object.values(f)){const r=c.find(d=>d.id===id);if(r)return r;}return null;}
 
-function getTabRx(dr,fr,frac){
-    const isCap = dr.unit==='캡슐';
+function getTabRx(dr,fr,frac,mode){
     const noGrind = dr.noGrind; // 흡습성 등으로 가루약 불가
-    if(frac<=0.25){
+    // 시럽 권장 구간 (15kg 미만)
+    if(mode==='syrup'||frac<=0.25){
         if(noGrind) return{rx:'시럽제 권장 (가루약 불가)',w:true};
         return{rx:'시럽제 권장',w:true};
     }
-    if(frac<=0.5){
-        if(isCap){
-            // 캡슐: 가루약으로 0.5캡슐 처방
-            return{rx:`가루약 0.5${dr.unit} x 1일 ${fr>=3?2:1}회`,w:false};
-        }
-        if(noGrind){
-            // 흡습성 정제: 가루약 불가 → 시럽 권장
-            return{rx:'시럽제 권장 (흡습성 높아 가루약 불가)',w:true};
-        }
-        // 일반 정제: 반정 분할
-        return{rx:`0.5${dr.unit} x 1일 ${fr}회`,w:false};
+    // 가루약 조제 구간 (15~20kg: 0.5정×3회, 20~30kg: 0.67정×3회)
+    if(mode==='grind'){
+        if(noGrind) return{rx:'시럽제 권장 (흡습성 높아 가루약 불가)',w:true};
+        return{rx:`가루약 ${frac<=0.5?'0.5':'0.67'}${dr.unit} x 1일 ${fr}회`,w:false};
     }
+    // 정제 복용 구간 (30~40kg: 1정×2회, 단 2회 약물은 성인 동일)
     if(frac<=0.67){
         if(fr>=3)return{rx:`1${dr.unit} x 1일 2회`,w:false};
-        return{rx:`1${dr.unit} x 1일 ${Math.max(1,Math.round(fr*frac))}회`,w:false};
+        // 2회 약물(클래리스로마이신 등): 30~40kg에서 1정×2회 = 성인 동일
+        return{rx:`1${dr.unit} x ${dr.aFrL} (성인 동일)`,w:false};
     }
+    // 성인 용량 (40kg 이상: 1정×3회)
     return{rx:`1${dr.unit} x ${dr.aFrL} (성인 동일)`,w:false};
 }
 
@@ -540,7 +537,7 @@ function buildCombinedRx(ids,age,wt){
             rxText=`${rule.dose} ${rule.freq}`;
         } else if(isTab){
             const b=WB.find(x=>wt>=x.mn&&wt<x.mx);
-            const rx=getTabRx(dr,dr.aFr,b.f);
+            const rx=getTabRx(dr,dr.aFr,b.f,b.mode);
             rxText=`${rx.w?'시럽 변경 권장':rx.rx} / ${dr.dur}`;
         } else {
             const c=dr.conc;
@@ -572,12 +569,12 @@ function buildProbioticHTML(dr,age){
 
 function buildTabletHTML(dr,age,wt){
     const b=WB.find(x=>wt>=x.mn&&wt<x.mx);
-    const rx=getTabRx(dr,dr.aFr,b.f);
+    const rx=getTabRx(dr,dr.aFr,b.f,b.mode);
     let h=`<div style="margin-bottom:8px;padding:8px 12px;background:var(--gray-800);color:white;border-radius:8px;font-weight:700;font-size:1rem;">${dispName(dr)}</div>`;
     if(rx.w){h+=`<div class="result-detail" style="border:2px solid var(--danger);background:#fef2f2"><div class="label" style="color:var(--danger)">${b.l} (${b.fl})</div><div class="value" style="color:var(--danger);font-size:1.05rem">${rx.rx}</div></div>`;}
     else{h+=`<div class="result-detail" style="border:2px solid var(--success);background:#f0fdf4"><div class="label" style="color:var(--success)">${b.l} → 성인의 ${b.fl}</div><div class="value highlight" style="font-size:1.2rem">${rx.rx}</div><div class="sub">${dr.dur}</div></div>`;}
     h+=`<div class="weight-bracket">`;
-    WB.forEach(x=>{const cur=(wt>=x.mn&&wt<x.mx);const r=getTabRx(dr,dr.aFr,x.f);
+    WB.forEach(x=>{const cur=(wt>=x.mn&&wt<x.mx);const r=getTabRx(dr,dr.aFr,x.f,x.mode);
         h+=`<div class="bracket-row ${cur?'current':''}"><div class="bracket-label">${x.l}</div><div class="bracket-fraction">${x.fl}</div><div class="bracket-rx">${r.w?`<span class="bracket-warn">${r.rx}</span>`:r.rx}</div></div>`;});
     h+=`</div><div class="result-note" style="margin-bottom:0">${dr.note}</div>`;
     return h;
@@ -691,12 +688,12 @@ function renderRefTable(){
     h+='</table>';
     // 알약
     h+='<h4 style="margin:16px 0 8px;font-size:0.9rem;color:var(--primary)">정제·캡슐 (임상 실무 처방 가이드 — 허가사항 아님)</h4>';
-    h+='<table class="ref-table"><tr><th>약물</th><th>성인용량</th><th>15kg미만(1/4)</th><th>15~30kg(1/2)</th><th>30~40kg(2/3)</th><th>40kg+(성인)</th></tr>';
+    h+='<table class="ref-table"><tr><th>약물</th><th>성인용량</th><th>15kg미만<br>(1/4)</th><th>15~20kg<br>(1/2)</th><th>20~30kg<br>(2/3)</th><th>30~40kg<br>(2/3)</th><th>40kg+<br>(성인)</th></tr>';
     for(const[cat,drugs] of Object.entries(D.tablet)){
         if(cat==='probiotic')continue;
-        h+=`<tr><td colspan="6" class="cat-header">${CAT_LABELS[cat]}</td></tr>`;
+        h+=`<tr><td colspan="7" class="cat-header">${CAT_LABELS[cat]}</td></tr>`;
         drugs.forEach(d=>{
-            const rxs=WB.map(b=>getTabRx(d,d.aFr,b.f));
+            const rxs=WB.map(b=>getTabRx(d,d.aFr,b.f,b.mode));
             h+=`<tr><td><strong>${d.name}</strong></td><td>${d.aDose} x ${d.aFrL}</td>`;
             rxs.forEach(r=>{h+=`<td>${r.w?'<span style="color:var(--danger)">시럽 권장</span>':r.rx}</td>`;});
             h+=`</tr>`;
