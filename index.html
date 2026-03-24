@@ -455,6 +455,9 @@ function renderList(){
 
 function findD(id){for(const f of Object.values(D))for(const c of Object.values(f)){const r=c.find(d=>d.id===id);if(r)return r;}return null;}
 
+const FR_ABBR={1:'QD',2:'BID',3:'TID',4:'QID',5:'5x/day'};
+function frAbbr(n){return FR_ABBR[n]||`${n}x/day`;}
+
 function getTabRx(dr,fr,frac,mode){
     const noGrind = dr.noGrind; // 흡습성 등으로 가루약 불가
     // 시럽 권장 구간 (15kg 미만)
@@ -608,8 +611,10 @@ function buildSyrupHTML(dr,age,wt){
         const boxColor=capped?'var(--warning)':'var(--success)';
         const boxBg=capped?'#fffbeb':'#f0fdf4';
         const capNote=capped?`<div style="font-size:0.75rem;color:var(--warning);margin-top:6px;font-weight:700;line-height:1.4">⚠ 체중 기반 계산 시 ${origMl}mL(${(origMl*c*dr.fr).toFixed(0)}mg/day)이나<br>${capReason} 초과하여<br>${recMl}mL(${recDaily.toFixed(0)}mg/day)로 조절됨</div>`:'';
+        const totalMl=recMl*dr.fr;
         h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
-            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
+            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl}mL ${frAbbr(dr.fr)}</div>
+            <div style="font-size:0.95rem;font-weight:600;color:var(--gray-600);margin-top:2px">(${totalMl}mL #${dr.fr})</div>
             <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
             <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
             <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg &times; ${wt}kg = ${dL.toFixed(1)}mg → ${mL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>${capNote}
@@ -636,8 +641,10 @@ function buildSyrupHTML(dr,age,wt){
         const boxColor=capped?'var(--warning)':'var(--success)';
         const boxBg=capped?'#fffbeb':'#f0fdf4';
         const capNote=capped?`<div style="font-size:0.75rem;color:var(--warning);margin-top:6px;font-weight:700;line-height:1.4">⚠ 체중 기반 계산 시 ${origMl}mL(${(origMl*c*dr.fr).toFixed(0)}mg/day)이나<br>${capReason} 초과하여<br>${recMl}mL(${recDaily.toFixed(0)}mg/day)로 조절됨</div>`:'';
+        const totalMl=recMl*dr.fr;
         h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
-            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
+            <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl}mL ${frAbbr(dr.fr)}</div>
+            <div style="font-size:0.95rem;font-weight:600;color:var(--gray-600);margin-top:2px">(${totalMl}mL #${dr.fr})</div>
             <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
             <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
             <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg/day &times; ${wt}kg &divide; ${dr.fr}회 = ${mPDL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>${capNote}
