@@ -269,10 +269,10 @@ syrup: {
         { id:'s_amox', name:'아목시실린 시럽', comp:'아목시실린 250mg/5mL', ex:'오라셉건조시럽',
           conc:50, dL:20, dH:40, fr:3, frL:'1일 3회(8h)', dur:'5~7일', mxD:1500, aMxPD:500, aMxDD:1500, pd:false,
           qml:null, note:'페니실린계 1차 선택약. 알레르기 확인 필수.', src:'식약처 허가사항' },
-        { id:'s_aug_duo', name:'오구멘틴듀오시럽', comp:'아목시실린200mg+클라불란산28.5mg /5mL (40mg/mL)', ex:'오구멘틴듀오 (7:1)',
+        { id:'s_aug_duo', name:'오구멘틴듀오시럽', comp:'아목시실린200mg+클라불란산28.5mg /5mL (아목시실린 40mg/mL)', ex:'오구멘틴듀오 (7:1)',
           conc:40, dL:25, dH:45, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1800, aMxPD:1000, aMxDD:1800, pd:false,
           qml:0.4, qmlNote:'1회 0.4mL/kg (BID)', note:'7:1 비율 BID. 식사 초기 투여.', src:'식약처 허가사항' },
-        { id:'s_aug_forte', name:'오구멘틴2배농축시럽', comp:'아목시실린400mg+클라불란산57mg /5mL (80mg/mL)', ex:'오구멘틴2배농축 (7:1 고농도)',
+        { id:'s_aug_forte', name:'오구멘틴2배농축시럽', comp:'아목시실린400mg+클라불란산57mg /5mL (아목시실린 80mg/mL)', ex:'오구멘틴2배농축 (7:1 고농도)',
           conc:80, dL:25, dH:45, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1800, aMxPD:1000, aMxDD:1800, pd:false,
           qml:null, note:'듀오 대비 2배 농축. 큰 소아에 유용.', src:'식약처 허가사항' },
         { id:'s_cefaclor', name:'세파클러 시럽 125mg/5mL', comp:'세파클러 125mg/5mL (25mg/mL)', ex:'씨클러, 케플러 건조시럽',
@@ -285,7 +285,7 @@ syrup: {
           conc:50, dL:25, dH:50, fr:4, frL:'1일 2~4회', dur:'5~7일', mxD:2000, aMxPD:1000, aMxDD:4000, pd:false,
           qml:null, note:'1세대 세팔로스포린.', src:'식약처 허가사항' },
         { id:'s_clarithro', name:'클래리스로마이신 시럽', comp:'클래리스로마이신 125mg/5mL (25mg/mL)', ex:'클래리시드, 클래리건조시럽',
-          conc:25, dL:7.5, dH:7.5, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1000, aMxPD:500, aMxDD:1000, pd:false,
+          conc:25, dL:15, dH:15, fr:2, frL:'1일 2회(12h)', dur:'5~7일', mxD:1000, aMxPD:500, aMxDD:1000, pd:false,
           note:'마크로라이드계. 페니실린 알레르기 시 대체약. 1회 7.5mg/kg BID (=15mg/kg/day).', src:'식약처 허가사항' },
     ],
     nsaid: [
@@ -356,7 +356,7 @@ tablet: {
     analgesic: [
         { id:'t_tylenol500', name:'타이레놀 정 500mg', comp:'아세트아미노펜 500mg', ex:'타이레놀정',
           mg:500, unit:'정', aDose:'1~2정', aFr:3, aFrL:'1일 3회', aDmg:1500, dur:'필요시',
-          note:'간독성 주의. 1일 4g 초과 금지.', src:'식약처 허가사항' },
+          note:'간독성 주의. 1일 4g 초과 금지. 필요시 4~6시간 간격 투여(최대 5회/일).', src:'식약처 허가사항' },
     ],
     probiotic: [
         { id:'t_rhamnosus', name:'람노스 과립 1g', comp:'유산균(L. rhamnosus) 1g/포', ex:'람노스과립',
