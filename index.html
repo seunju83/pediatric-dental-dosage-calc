@@ -586,45 +586,61 @@ function buildSyrupHTML(dr,age,wt){
 
     if(dr.pd){
         const dL=dr.dL*wt,dH=dr.dH*wt,mL=dL/c,mH=dH/c,ddL=dL*dr.fr,ddH=dH*dr.fr;
-        if(dr.mxDU30&&wt<=30&&ddL>dr.mxDU30)ma.push({t:`30kg이하 1일 최대 ${dr.mxDU30}mg 초과`,d:'권장 용량으로도 초과',calc:`${ddL.toFixed(0)}mg/day`,lim:`${dr.mxDU30}mg/day`});
-        else if(dr.mxDU30&&wt<=30&&ddH>dr.mxDU30)warn.push(`30kg이하: 최대용량 시 ${dr.mxDU30}mg 초과`);
-        if(dr.aMxPD&&dH>dr.aMxPD)ma.push({t:'성인 1회 최대 초과',d:`성인 1회 ${dr.aMxPD}mg 초과`,calc:`${dH.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
-        if(dr.aMxDD&&ddH>dr.aMxDD)ma.push({t:'성인 1일 최대 초과',d:`성인 1일 ${dr.aMxDD}mg 초과`,calc:`${ddH.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
-        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수
-        const recMl=Math.round(mL);
+        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수 + 캡핑
+        let recMl=Math.round(mL);
+        const origMl=recMl;
+        let capReason='';
+        // 30kg이하 1일 최대 캡핑
+        if(dr.mxDU30&&wt<=30&&recMl*c*dr.fr>dr.mxDU30){
+            recMl=Math.floor(dr.mxDU30/dr.fr/c);capReason=`30kg 이하 1일 최대 ${dr.mxDU30}mg`;
+        }
+        // 성인 1회 최대 캡핑
+        if(dr.aMxPD&&recMl*c>dr.aMxPD){
+            recMl=Math.floor(dr.aMxPD/c);capReason=`성인 1회 최대 ${dr.aMxPD}mg`;
+        }
+        // 성인 1일 최대 캡핑
+        if(dr.aMxDD&&recMl*c*dr.fr>dr.aMxDD){
+            recMl=Math.floor(dr.aMxDD/dr.fr/c);capReason=`성인 1일 최대 ${dr.aMxDD}mg`;
+        }
+        const capped=capReason!=='';
         const recMg=recMl*c;
         const recDaily=recMg*dr.fr;
-        // 반올림 추천값 초과 체크
-        if(dr.mxDU30&&wt<=30&&recDaily>dr.mxDU30)ma.push({t:`추천 용량 1일 최대 초과 (30kg이하)`,d:`반올림 ${recMl}mL x ${dr.fr}회 = ${recDaily.toFixed(0)}mg/day`,calc:`${recDaily.toFixed(0)}mg/day`,lim:`${dr.mxDU30}mg/day`});
-        if(dr.aMxPD&&recMg>dr.aMxPD)ma.push({t:`추천 용량 성인 1회 최대 초과`,d:`반올림 ${recMl}mL = ${recMg.toFixed(0)}mg`,calc:`${recMg.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
-        const boxColor=(ma.length>0)?'var(--danger)':'var(--success)';
-        const boxBg=(ma.length>0)?'#fef2f2':'#f0fdf4';
+        const boxColor=capped?'var(--warning)':'var(--success)';
+        const boxBg=capped?'#fffbeb':'#f0fdf4';
+        const capNote=capped?`<div style="font-size:0.75rem;color:var(--warning);margin-top:6px;font-weight:700;line-height:1.4">⚠ 체중 기반 계산 시 ${origMl}mL(${(origMl*c*dr.fr).toFixed(0)}mg/day)이나<br>${capReason} 초과하여<br>${recMl}mL(${recDaily.toFixed(0)}mg/day)로 조절됨</div>`:'';
         h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
             <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
             <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
             <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
-            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg &times; ${wt}kg = ${dL.toFixed(1)}mg → ${mL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>
+            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg &times; ${wt}kg = ${dL.toFixed(1)}mg → ${mL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>${capNote}
         </div>`;
         h+=`<div class="result-grid"><div class="result-detail"><div class="label">권장 (${dr.dL}mg/kg)</div><div class="value" style="font-size:0.95rem">${mL.toFixed(1)}mL (${dL.toFixed(0)}mg)</div></div>
             <div class="result-detail"><div class="label">최대 (${dr.dH}mg/kg)</div><div class="value" style="font-size:0.95rem">${mH.toFixed(1)}mL (${dH.toFixed(0)}mg)</div></div></div>`;
     } else {
         const ddL=dr.dL*wt,ddH=dr.dH*wt,pdL=ddL/dr.fr,pdH=ddH/dr.fr,mPDL=pdL/c,mPDH=pdH/c;
-        if(dr.aMxDD&&ddL>dr.aMxDD)ma.push({t:'성인 1일 최대 초과(일반)',d:`성인 ${dr.aMxDD}mg 초과`,calc:`${ddL.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
-        else if(dr.aMxDD&&ddH>dr.aMxDD)ma.push({t:'성인 1일 최대 초과(중증)',d:`성인 ${dr.aMxDD}mg 초과`,calc:`${ddH.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
-        if(dr.aMxPD&&pdH>dr.aMxPD)ma.push({t:'성인 1회 최대 초과',d:`성인 1회 ${dr.aMxPD}mg 초과`,calc:`${pdH.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
-        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수
-        const recMl=Math.round(mPDL);
+        // 핵심 처방 박스: 허가사항 권장 용량 반올림 정수 + 캡핑
+        let recMl=Math.round(mPDL);
+        const origMl=recMl;
+        let capReason='';
+        // 성인 1회 최대 캡핑
+        if(dr.aMxPD&&recMl*c>dr.aMxPD){
+            recMl=Math.floor(dr.aMxPD/c);capReason=`성인 1회 최대 ${dr.aMxPD}mg`;
+        }
+        // 성인 1일 최대 캡핑
+        if(dr.aMxDD&&recMl*c*dr.fr>dr.aMxDD){
+            recMl=Math.floor(dr.aMxDD/dr.fr/c);capReason=`성인 1일 최대 ${dr.aMxDD}mg`;
+        }
+        const capped=capReason!=='';
         const recMg=recMl*c;
         const recDaily=recMg*dr.fr;
-        if(dr.aMxDD&&recDaily>dr.aMxDD)ma.push({t:`추천 용량 성인 1일 최대 초과`,d:`반올림 ${recMl}mL x ${dr.fr}회 = ${recDaily.toFixed(0)}mg/day`,calc:`${recDaily.toFixed(0)}mg/day`,lim:`${dr.aMxDD}mg/day`});
-        if(dr.aMxPD&&recMg>dr.aMxPD)ma.push({t:`추천 용량 성인 1회 최대 초과`,d:`반올림 ${recMl}mL = ${recMg.toFixed(0)}mg`,calc:`${recMg.toFixed(0)}mg`,lim:`${dr.aMxPD}mg`});
-        const boxColor=(ma.length>0)?'var(--danger)':'var(--success)';
-        const boxBg=(ma.length>0)?'#fef2f2':'#f0fdf4';
+        const boxColor=capped?'var(--warning)':'var(--success)';
+        const boxBg=capped?'#fffbeb':'#f0fdf4';
+        const capNote=capped?`<div style="font-size:0.75rem;color:var(--warning);margin-top:6px;font-weight:700;line-height:1.4">⚠ 체중 기반 계산 시 ${origMl}mL(${(origMl*c*dr.fr).toFixed(0)}mg/day)이나<br>${capReason} 초과하여<br>${recMl}mL(${recDaily.toFixed(0)}mg/day)로 조절됨</div>`:'';
         h+=`<div class="result-detail" style="border:2.5px solid ${boxColor};background:${boxBg};padding:14px;text-align:center">
             <div class="value highlight" style="font-size:1.8rem;color:${boxColor}">${recMl} mL</div>
             <div style="font-size:1.05rem;font-weight:700;color:var(--gray-700);margin-top:4px">${dr.frL}</div>
             <div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px">${dr.dur}</div>
-            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg/day &times; ${wt}kg &divide; ${dr.fr}회 = ${mPDL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>
+            <div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px">${dr.dL}mg/kg/day &times; ${wt}kg &divide; ${dr.fr}회 = ${mPDL.toFixed(1)}mL → <strong>${recMl}mL</strong></div>${capNote}
         </div>`;
         h+=`<div class="result-grid"><div class="result-detail"><div class="label">일반 (${dr.dL}mg/kg/day)</div><div class="value" style="font-size:0.95rem">${mPDL.toFixed(1)}mL (${pdL.toFixed(0)}mg)/회</div></div>
             <div class="result-detail"><div class="label">중증 (${dr.dH}mg/kg/day)</div><div class="value" style="font-size:0.95rem">${mPDH.toFixed(1)}mL (${pdH.toFixed(0)}mg)/회</div></div></div>`;
